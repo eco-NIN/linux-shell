@@ -32,6 +32,7 @@ int main() {
 
 void main_loop() {
     char line[MAX_CMD_LEN];
+    char* expanded_line;
     command_t cmds[MAX_ARGS]; // 用于存储管道命令
     int cmd_count;
 
@@ -47,29 +48,42 @@ void main_loop() {
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
 
-        // !!! 集成点在这里 !!!
+        // !!! history集成点在这里 !!!
+        // 添加到历史记录的是原始命令
         add_to_history(line);
 
-        // 如果行为空，则继续
-        if (strlen(line) == 0) {
+        // !!! 集成点：在解析前展开别名 !!!
+        expanded_line = expand_alias(line);
+
+
+        // 如果命令行为空（或只有空格），则继续
+        if (strlen(expanded_line) == 0) {
+            free(expanded_line);
             continue;
         }
 
         // 解析管道
-        cmd_count = parse_pipe_commands(line, cmds, &cmd_count);
+        // 使用展开后的命令进行解析和执行
+        //cmd_count = parse_pipe_commands(line, cmds, &cmd_count);
+        cmd_count = parse_pipe_commands(expanded_line, cmds, &cmd_count);
 
         if (cmd_count > 1) {
             execute_pipeline(cmds, cmd_count);
         } else {
             // 解析单个命令 (包括重定向和后台)
-            parse_command(line, &cmds[0]);
+            parse_command(expanded_line, &cmds[0]);
             
-            // 尝试作为内建命令处理
-            if (handle_builtin_command(&cmds[0]) == 0) {
-                // 如果不是内建命令，则作为外部命令执行
-                execute_command(&cmds[0]);
+            if (cmds[0].args[0] != NULL) {
+                // 尝试作为内建命令处理
+                if (handle_builtin_command(&cmds[0]) == 0) {
+                    // 如果不是内建命令，则作为外部命令执行
+                    execute_command(&cmds[0]);
+                }
             }
         }
+
+        // !!! 关键：释放 expand_alias 分配的内存 !!!
+        free(expanded_line);
     }
 }
 
