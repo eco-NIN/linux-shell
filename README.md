@@ -94,6 +94,8 @@ ls -alF
 
 # 使用管道将 ls 的输出传递给 grep 进行过滤
 ls -l | grep ".c"
+或
+ls -l | grep .c
 ```
 
 ### 2\. I/O 重定向与后台执行
