@@ -114,6 +114,21 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include <unistd.h> // 为了 gethostname
+
+
+// 定义 ANSI 颜色代码
+#define C_RESET   "\033[0m"
+#define C_BLACK   "\033[30m"
+#define C_RED     "\033[31m"
+#define C_GREEN   "\033[32m"
+#define C_YELLOW  "\033[33m"
+#define C_BLUE    "\033[34m"
+#define C_MAGENTA "\033[35m"
+#define C_CYAN    "\033[36m"
+#define C_WHITE   "\033[37m"
+
+
 // 函数原型
 void main_loop();
 char* get_prompt();
@@ -176,17 +191,62 @@ void main_loop() {
     }
 }
 
+// /**
+//  * @description: 生成提示符字符串
+//  * @return {char*} 返回一个需要被 free 的字符串
+//  */
+// char* get_prompt() {
+//     char cwd[1024];
+//     char* prompt = (char*)malloc(1024 + 32);
+//     if (getcwd(cwd, sizeof(cwd)) != NULL) {
+//         snprintf(prompt, 1024 + 32, "\033[1;32m%s\033[0m$ ", cwd);
+//     } else {
+//         snprintf(prompt, 1024 + 32, "myshell$ ");
+//     }
+//     return prompt;
+// }
+
+// 在 src/main.c 中
+
 /**
- * @description: 生成提示符字符串
+ * @description: 生成一个完整、美化的命令提示符字符串
  * @return {char*} 返回一个需要被 free 的字符串
  */
 char* get_prompt() {
-    char cwd[1024];
-    char* prompt = (char*)malloc(1024 + 32);
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        snprintf(prompt, 1024 + 32, "\033[1;32m%s\033[0m$ ", cwd);
-    } else {
-        snprintf(prompt, 1024 + 32, "myshell$ ");
+    // --- 1. 获取基本信息 ---
+    char hostname[256];
+    char* user = getenv("USER");
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        strcpy(hostname, "unknown");
     }
+
+    // --- 2. 获取并处理路径 ---
+    char cwd[1024];
+    char path_display[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        char* home_dir = getenv("HOME");
+        // 如果当前路径以家目录开头，则用 '~' 替换
+        if (home_dir && strncmp(cwd, home_dir, strlen(home_dir)) == 0) {
+            snprintf(path_display, sizeof(path_display), "~%s", cwd + strlen(home_dir));
+        } else {
+            strncpy(path_display, cwd, sizeof(path_display));
+        }
+    } else {
+        strcpy(path_display, "unknown_path");
+    }
+
+    // --- 3. 拼接所有部分 ---
+    char* prompt = (char*)malloc(2048); // 分配足够大的空间
+    snprintf(prompt, 2048,
+        "%s[myshell]%s %s%s%s@%s%s:%s%s%s$ %s",
+        C_YELLOW,                            // [myshell] 标识 (黄色)
+        C_RESET,                             // 重置颜色
+        C_GREEN, user ? user : "user",       // 用户名 (绿色)
+        C_WHITE, "@", hostname,              // @主机名 (白色)
+        C_RESET,                             // 重置颜色
+        C_CYAN, path_display,                // 路径 (青色)
+        C_RESET                              // 重置颜色
+    );
+    
     return prompt;
 }
