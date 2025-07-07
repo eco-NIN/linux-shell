@@ -30,6 +30,15 @@ typedef struct {
     int is_background;      // 是否后台执行
 } command_t;
 
+
+// 在文件顶部或合适的位置，定义 Alias 结构体
+typedef struct Alias {
+    char* name;
+    char* command;
+    struct Alias* next;
+} Alias;
+
+
 // 函数原型
 // parser.c
 int parse_command(char* line, command_t* cmd);
@@ -44,8 +53,12 @@ int handle_builtin_command(command_t* cmd);
 void builtin_cd(char** args);
 void builtin_echo(char** args);
 void builtin_type(char** args);
+
 void builtin_alias(char** args);
-// 添加和修改以下函数原型
+void builtin_unalias(char** args);  // 新增
+char* expand_alias(char* line);     // 新增，这个函数非常关键
+
+// 添加和修改以下history函数原型
 void add_to_history(const char* cmd); // 新增
 void builtin_history(char** args);    // 修改，确保参数统一
 

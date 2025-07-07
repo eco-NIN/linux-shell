@@ -5,6 +5,33 @@
  * @Descripttion: 命令解析模块,这个模块负责将字符串拆分成 command_t 结构。我们先实现一个简单的版本，处理空格分隔的参数
  */
 
+//真正的根本原因：parser.c 的“过度”解析
+
+// 问题出在我们项目最基础的模块之一：parser.c 中的 parse_command 函数。
+
+// 我们用 strtok 函数以空格为分隔符来拆分命令。这个方法过于简单，它不理解引号的含义。当它看到 alias ll='ls -alF' 这条命令时，它的行为是：
+
+// 找到第一个词 alias。
+
+// 找到第二个词 ll='ls (它在空格处停下，将 'ls 和 -alF' 分割开)。
+
+// 找到第三个词 -alF'。
+
+// 所以，最终传递给 builtin_alias 函数的 args 数组，其内容实际上是：
+
+// args[0] = "alias"
+
+// args[1] = "ll='ls"  <-- 问题所在
+
+// args[2] = "-alF'" <-- 问题所在
+
+// args[3] = NULL
+
+// 当我之前编写 builtin_alias 的修复代码时，我错误地假设了 args[1] 会是完整的 "ll='ls -alF'"。但实际上，它已经被我们的解析器无情地拆开了。
+
+// 因此，builtin_alias 只拿到了 ll='ls 进行处理，自然就错误地将 'ls 存为了别名的值。这就完美解释了你看到的所有现象。
+
+
 #include "shell.h"
 #include <stdbool.h> // 引入布尔类型，让代码更清晰
 
