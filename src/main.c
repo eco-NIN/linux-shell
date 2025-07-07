@@ -238,11 +238,11 @@ char* get_prompt() {
     // --- 3. 拼接所有部分 ---
     char* prompt = (char*)malloc(2048); // 分配足够大的空间
     snprintf(prompt, 2048,
-        "%s[myshell]%s %s%s%s@%s%s:%s%s%s$ %s",
+        "%s[linux-shell]%s %s%s%s@%s%s:%s%s%s$",
         C_YELLOW,                            // [myshell] 标识 (黄色)
         C_RESET,                             // 重置颜色
         C_GREEN, user ? user : "user",       // 用户名 (绿色)
-        C_WHITE, "@", hostname,              // @主机名 (白色)
+        C_WHITE, hostname,              // @主机名 (白色)
         C_RESET,                             // 重置颜色
         C_CYAN, path_display,                // 路径 (青色)
         C_RESET                              // 重置颜色

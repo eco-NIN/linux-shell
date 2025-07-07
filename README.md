@@ -128,8 +128,8 @@ type cd
 ### 4\. 命令补全 (基础版)
 
 ```bash
-# 输入 e 然后按 Tab 键，会自动补全为 echo
-e<Tab>
+# 输入 l 然后按 Tab 键，会自动补全为 ls
+l<Tab>
 
 # 输入 c 然后连续按两次 Tab 键，会列出所有 c 开头的命令
 c<Tab><Tab>
