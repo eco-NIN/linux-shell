@@ -1,7 +1,7 @@
 /*
  * @Author: Yuzhe Guo
  * @Date: 2025-07-07 14:58:34
- * @FilePath: /OS/linux_shell/src/shell.h
+ * @FilePath: /linux-shell/include/shell.h
  * @Descripttion: 项目总头文件,定义所有模块共享的数据结构和函数原型
  */
 
@@ -19,6 +19,7 @@
 // 常量定义
 #define MAX_CMD_LEN 1024 // 最大命令长度
 #define MAX_ARGS 64      // 最大参数数量
+#define HIST_SIZE 20     // 添加一个宏，用于定义命令历史记录大小
 
 // 命令结构体，用于存储解析后的命令
 // 这一步对于实现管道和重定向至关重要
@@ -42,9 +43,11 @@ void execute_pipeline(command_t* cmds, int cmd_count);
 int handle_builtin_command(command_t* cmd);
 void builtin_cd(char** args);
 void builtin_echo(char** args);
-void builtin_history();
 void builtin_type(char** args);
 void builtin_alias(char** args);
+// 添加和修改以下函数原型
+void add_to_history(const char* cmd); // 新增
+void builtin_history(char** args);    // 修改，确保参数统一
 
 // main.c
 void main_loop();

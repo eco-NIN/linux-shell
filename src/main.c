@@ -1,7 +1,7 @@
 /*
  * @Author: Yuzhe Guo
  * @Date: 2025-07-07 14:42:31
- * @FilePath: /OS/linux_shell/src/main.c
+ * @FilePath: /linux-shell/src/main.c
  * @Descripttion: 主程序入口和主循环
  */
 
@@ -46,6 +46,9 @@ void main_loop() {
 
         // 移除换行符
         line[strcspn(line, "\n")] = 0;
+
+        // !!! 集成点在这里 !!!
+        add_to_history(line);
 
         // 如果行为空，则继续
         if (strlen(line) == 0) {
