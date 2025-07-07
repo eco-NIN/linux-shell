@@ -118,21 +118,50 @@
 
 
 // 定义 ANSI 颜色代码
-#define C_RESET   "\033[0m"
-#define C_BLACK   "\033[30m"
-#define C_RED     "\033[31m"
-#define C_GREEN   "\033[32m"
-#define C_YELLOW  "\033[33m"
-#define C_BLUE    "\033[34m"
-#define C_MAGENTA "\033[35m"
-#define C_CYAN    "\033[36m"
-#define C_WHITE   "\033[37m"
+// #define C_RESET   "\033[0m"
+// #define C_BLACK   "\033[30m"
+// #define C_RED     "\033[31m"
+// #define C_GREEN   "\033[32m"
+// #define C_YELLOW  "\033[33m"
+// #define C_BLUE    "\033[34m"
+// #define C_MAGENTA "\033[35m"
+// #define C_CYAN    "\033[36m"
+// #define C_WHITE   "\033[37m"
+// ✅ 定义包含了 \001 和 \002 的、readline 安全的 ANSI 颜色代码
+#define C_RESET   "\001\033[0m\002"
+#define C_BLACK   "\001\033[30m\002"
+#define C_RED     "\001\033[31m\002"
+#define C_GREEN   "\001\033[32m\002"
+#define C_YELLOW  "\001\033[33m\002"
+#define C_BLUE    "\001\033[34m\002"
+#define C_MAGENTA "\001\033[35m\002"
+#define C_CYAN    "\001\033[36m\002"
+#define C_WHITE   "\001\033[37m\002"
+
+// 幸运的是，readline 库提供了另一套更通用、更推荐的“记号”，就是 \[ 和 \]。
+
+// 它们的作用和 \001, \002 完全一样，都是用来包裹非打印字符序列，但它们的兼容性更好，是专门设计给用户在设置提示符字符串时使用的。
+
+// \[: 相当于开始标记 \001
+
+// \]: 相当于结束标记 \002
+
+// #define C_RESET   "\[\033[0m\]"
+// #define C_BLACK   "\[\033[30m\]"
+// #define C_RED     "\[\033[31m\]"
+// #define C_GREEN   "\[\033[32m\]"
+// #define C_YELLOW  "\[\033[33m\]"
+// #define C_BLUE    "\[\033[34m\]"
+// #define C_MAGENTA "\[\033[35m\]"
+// #define C_CYAN    "\[\033[36m\]"
+// #define C_WHITE   "\[\033[37m\]"
 
 
 // 函数原型
 void main_loop();
 char* get_prompt();
 void initialize_shell();
+int parse_line(char* line, command_t* cmds);
 
 int main() {
     initialize_shell();
@@ -170,11 +199,16 @@ void main_loop() {
         if (line && *line) {
             add_history(line); // 使用 readline 自带的历史记录功能
             
+            // ✅ 同时，也要把命令添加到我们自己的历史记录数组中 (为了让 `history` 命令能工作)
+            add_to_history(line); 
+
             expanded_line = expand_alias(line);
 
             if (strlen(expanded_line) > 0) {
+                // ✅ 替换为对新函数的调用
+                cmd_count = parse_line(expanded_line, cmds);
                 //cmd_count = parse_pipe_commands(expanded_line, cmds);
-                cmd_count = parse_pipe_commands(expanded_line, cmds, &cmd_count);
+                //cmd_count = parse_pipe_commands(expanded_line, cmds, &cmd_count);
 
                 if (cmd_count > 1) {
                     execute_pipeline(cmds, cmd_count);
@@ -250,3 +284,38 @@ char* get_prompt() {
     
     return prompt;
 }
+
+
+// char* get_prompt() {
+//     char hostname[256];
+//     char* user = getenv("USER");
+//     if (gethostname(hostname, sizeof(hostname)) != 0) {
+//         strcpy(hostname, "unknown");
+//     }
+
+//     char cwd[1024];
+//     char path_display[1024];
+//     if (getcwd(cwd, sizeof(cwd)) != NULL) {
+//         char* home_dir = getenv("HOME");
+//         if (home_dir && strncmp(cwd, home_dir, strlen(home_dir)) == 0) {
+//             snprintf(path_display, sizeof(path_display), "~%s", cwd + strlen(home_dir));
+//         } else {
+//             strncpy(path_display, cwd, sizeof(path_display));
+//         }
+//     } else {
+//         strcpy(path_display, "unknown_path");
+//     }
+
+//     // ✅ 使用 \001...\002 包裹颜色码，防止 readline 计算错位
+//     char* prompt = (char*)malloc(2048);
+//     snprintf(prompt, 2048,
+//         "\001%s\002[linux-shell]\001%s\002 \001%s\002%s@%s\001%s\002:\001%s\002%s\001%s\002$ ",
+//         C_YELLOW, C_RESET,
+//         C_GREEN, user ? user : "user", hostname,
+//         C_RESET,
+//         C_CYAN, path_display,
+//         C_RESET
+//     );
+    
+//     return prompt;
+// }

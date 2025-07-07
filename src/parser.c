@@ -33,167 +33,113 @@
 
 
 #include "shell.h"
-#include <stdbool.h> // 引入布尔类型，让代码更清晰
 
-// 在 src/parser.c 中
-// ==========================================================
-//            !!! 全新的、支持引号的 parse_command !!!
-// ==========================================================
-int parse_command(char* line, command_t* cmd) {
-    memset(cmd, 0, sizeof(command_t));
+// 先声明一个辅助函数，用于清理 command_t 数组的内存
+static void cleanup_cmds(command_t* cmds, int count) {
+    for (int i = 0; i < count; i++) {
+        for (int j = 0; cmds[i].args[j] != NULL; j++) {
+            free(cmds[i].args[j]);
+        }
+    }
+}
+
+/**
+ * @description: 统一的命令行解析函数
+ * @param {char*} line - 完整的用户输入行
+ * @param {command_t*} cmds - command_t 结构体数组
+ * @return {int} - 解析出的命令数量
+ */
+int parse_line(char* line, command_t* cmds) {
+    int cmd_count = 0;
     int argc = 0;
     char* buf = line;
     char* arg_start = NULL;
     int in_quote = 0;
 
-    while (*buf != '\0' && argc < MAX_ARGS - 1) {
-        // 跳过前导的空白字符
-        while (*buf == ' ' || *buf == '\t') {
+    // 初始化第一个命令
+    memset(&cmds[cmd_count], 0, sizeof(command_t));
+
+    while (*buf != '\0') {
+        // 跳过前导空白
+        while (*buf == ' ' || *buf == '\t') buf++;
+        if (*buf == '\0') break;
+
+        // 检查管道符
+        if (*buf == '|') {
+            if (argc == 0) { // 管道符前没有命令
+                fprintf(stderr, "myshell: syntax error near unexpected token `|'\n");
+                cleanup_cmds(cmds, cmd_count);
+                return 0;
+            }
+            cmds[cmd_count].args[argc] = NULL; // 结束当前命令的参数列表
+            cmd_count++; // 移动到下一个命令
+            argc = 0; // 重置参数计数器
+            memset(&cmds[cmd_count], 0, sizeof(command_t)); // 初始化下一个命令
             buf++;
-        }
-
-        if (*buf == '\0') break; // 到达行尾
-
-        // 检查是否是引号
-        if (*buf == '\"') {
-            in_quote = 1;
-            buf++; // 跳过开头的引号
-            arg_start = buf;
-            // 寻找匹配的结束引号
-            while (*buf != '\0' && *buf != '\"') {
-                buf++;
-            }
-        } else {
-            in_quote = 0;
-            arg_start = buf;
-            // 寻找下一个空白字符
-            while (*buf != '\0' && *buf != ' ' && *buf != '\t') {
-                buf++;
-            }
-        }
-
-        if (*buf != '\0') {
-            if (in_quote) {
-                if (*buf != '\"') {
-                     fprintf(stderr, "myshell: syntax error: unclosed quote\n");
-                     return 0;
-                }
-            }
-            *buf = '\0'; // 用 NULL 截断，得到一个完整的参数
-            buf++;       // 移动到下一个位置
+            continue;
         }
         
-        cmd->args[argc++] = strdup(arg_start);
-    }
-    cmd->args[argc] = NULL;
-    
-    // 处理重定向的逻辑（可以保持不变，但要确保它在新的解析器下正常工作）
-    for (int i = 0; i < argc; i++) {
-        if (cmd->args[i] != NULL && strcmp(cmd->args[i], ">") == 0) {
-            if (cmd->args[i+1] != NULL) {
-                cmd->output_file = cmd->args[i+1];
-                cmd->args[i] = NULL;
+        // 解析一个参数
+        arg_start = buf;
+        if (*buf == '\"') {
+            in_quote = 1;
+            arg_start++; // 跳过开头的引号
+            buf++;
+            while (*buf != '\0' && *buf != '\"') buf++;
+        } else {
+            in_quote = 0;
+            while (*buf != '\0' && *buf != ' ' && *buf != '\t' && *buf != '|') buf++;
+        }
+        
+        char saved_char = *buf;
+        *buf = '\0';
+        cmds[cmd_count].args[argc++] = strdup(arg_start);
+        *buf = saved_char;
+        
+        if (in_quote) {
+            if (*buf == '\"') buf++; // 跳过结束的引号
+            else {
+                fprintf(stderr, "myshell: syntax error: unclosed quote\n");
+                cleanup_cmds(cmds, cmd_count + 1);
+                return 0;
             }
-        } else if (cmd->args[i] != NULL && strcmp(cmd->args[i], "<") == 0) {
-            // ... (类似的处理) ...
-        } // ... 等等
+        }
     }
 
-    return argc;
-}
-// 在 parser.c 中添加
-int parse_pipe_commands(char* line, command_t* cmds, int* cmd_count) {
-    char* next_cmd = line;
-    char* pipe_pos;
-    int count = 0;
-
-
-    // 使用 strsep 来分割，比 strtok 更安全
-    while ((pipe_pos = strchr(next_cmd, '|')) != NULL) {
-        *pipe_pos = '\0'; // 用 NULL 分割命令
-        parse_command(next_cmd, &cmds[count++]);
-        next_cmd = pipe_pos + 1;
+    if (argc > 0) {
+        cmds[cmd_count].args[argc] = NULL;
+        cmd_count++;
     }
-    parse_command(next_cmd, &cmds[count++]);
-    
-    *cmd_count = count;
-    return count;
+
+    // 后处理：扫描每个命令的参数来查找重定向和后台符号
+    for (int i = 0; i < cmd_count; i++) {
+        for (int j = 0; cmds[i].args[j] != NULL; j++) {
+            if (strcmp(cmds[i].args[j], "<") == 0) {
+                cmds[i].input_file = strdup(cmds[i].args[j+1]);
+                free(cmds[i].args[j]);
+                free(cmds[i].args[j+1]);
+                cmds[i].args[j] = NULL; // 从参数中移除
+                cmds[i].args[j+1] = NULL;
+            } else if (strcmp(cmds[i].args[j], ">") == 0) {
+                cmds[i].output_file = strdup(cmds[i].args[j+1]);
+                free(cmds[i].args[j]);
+                free(cmds[i].args[j+1]);
+                cmds[i].args[j] = NULL;
+            } else if (strcmp(cmds[i].args[j], "&") == 0) {
+                cmds[i].is_background = 1;
+                free(cmds[i].args[j]);
+                cmds[i].args[j] = NULL;
+            }
+        }
+        // 清理参数数组中的 NULL “空洞”
+        int write_idx = 0;
+        for (int read_idx = 0; cmds[i].args[read_idx] != NULL; read_idx++) {
+            if (cmds[i].args[read_idx] != NULL) { // 检查是多余的，但为了安全
+                cmds[i].args[write_idx++] = cmds[i].args[read_idx];
+            }
+        }
+        cmds[i].args[write_idx] = NULL;
+    }
+
+    return cmd_count;
 }
-
-
-// // 在 src/parser.c 中
-// // ==========================================================
-// // 调试版本：parse_pipe_commands
-// // ==========================================================
-// int parse_pipe_commands(char* line, command_t* cmds, int* cmd_count) {
-//     printf("\n--- [DEBUG] Entering parse_pipe_commands with line: \"%s\"\n", line);
-
-//     char* next_cmd = line;
-//     char* pipe_pos;
-//     int count = 0;
-
-//     while ((pipe_pos = strchr(next_cmd, '|')) != NULL) {
-//         *pipe_pos = '\0';
-//         printf("--- [DEBUG] Pipe found. Parsing command part: \"%s\"\n", next_cmd);
-//         parse_command(next_cmd, &cmds[count++]);
-//         next_cmd = pipe_pos + 1;
-//         // Trim leading spaces for the next command part
-//         while (*next_cmd == ' ') next_cmd++;
-//     }
-//     printf("--- [DEBUG] No more pipes. Parsing final command part: \"%s\"\n", next_cmd);
-//     parse_command(next_cmd, &cmds[count++]);
-    
-//     *cmd_count = count;
-//     printf("--- [DEBUG] Leaving parse_pipe_commands. Found %d commands.\n\n", *cmd_count);
-//     return count;
-// }
-
-
-// // ==========================================================
-// // 调试版本：parse_command
-// // ==========================================================
-// int parse_command(char* line, command_t* cmd) {
-//     memset(cmd, 0, sizeof(command_t));
-//     char* line_copy = strdup(line);
-//     if (!line_copy) {
-//         perror("strdup");
-//         return 0;
-//     }
-
-//     char* token;
-//     int arg_count = 0;
-
-//     token = strtok(line_copy, " \t\r\n\a");
-//     while(token != NULL && arg_count < MAX_ARGS - 1) {
-//         cmd->args[arg_count++] = strdup(token);
-//         token = strtok(NULL, " \t\r\n\a");
-//     }
-//     cmd->args[arg_count] = NULL;
-    
-//     // 打印出解析结果
-//     printf("    [DEBUG] parse_command result for \"%s\":\n", line);
-//     for (int i = 0; i < arg_count; i++) {
-//         printf("        args[%d]: %s\n", i, cmd->args[i]);
-//     }
-
-//     // 处理重定向等（这部分代码保持不变）
-//     for (int i = 0; i < arg_count; i++) {
-//         if (cmd->args[i] != NULL && strcmp(cmd->args[i], ">") == 0) {
-//             if (cmd->args[i+1] != NULL) {
-//                 cmd->output_file = cmd->args[i+1];
-//                 cmd->args[i] = NULL;
-//             }
-//         } else if (cmd->args[i] != NULL && strcmp(cmd->args[i], "<") == 0) {
-//             if (cmd->args[i+1] != NULL) {
-//                 cmd->input_file = cmd->args[i+1];
-//                 cmd->args[i] = NULL;
-//             }
-//         } else if (cmd->args[i] != NULL && strcmp(cmd->args[i], "&") == 0) {
-//             cmd->is_background = 1;
-//             cmd->args[i] = NULL;
-//         }
-//     }
-
-//     free(line_copy);
-//     return arg_count;
-// }
