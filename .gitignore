@@ -1,0 +1,10 @@
+# 编译生成文件
+# myshell
+*.o
+*.out
+
+# VSCode 配置
+.vscode/
+
+# macOS系统缓存
+.DS_Store
