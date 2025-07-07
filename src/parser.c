@@ -109,3 +109,81 @@ int parse_pipe_commands(char* line, command_t* cmds, int* cmd_count) {
     *cmd_count = count;
     return count;
 }
+
+
+// // 在 src/parser.c 中
+// // ==========================================================
+// // 调试版本：parse_pipe_commands
+// // ==========================================================
+// int parse_pipe_commands(char* line, command_t* cmds, int* cmd_count) {
+//     printf("\n--- [DEBUG] Entering parse_pipe_commands with line: \"%s\"\n", line);
+
+//     char* next_cmd = line;
+//     char* pipe_pos;
+//     int count = 0;
+
+//     while ((pipe_pos = strchr(next_cmd, '|')) != NULL) {
+//         *pipe_pos = '\0';
+//         printf("--- [DEBUG] Pipe found. Parsing command part: \"%s\"\n", next_cmd);
+//         parse_command(next_cmd, &cmds[count++]);
+//         next_cmd = pipe_pos + 1;
+//         // Trim leading spaces for the next command part
+//         while (*next_cmd == ' ') next_cmd++;
+//     }
+//     printf("--- [DEBUG] No more pipes. Parsing final command part: \"%s\"\n", next_cmd);
+//     parse_command(next_cmd, &cmds[count++]);
+    
+//     *cmd_count = count;
+//     printf("--- [DEBUG] Leaving parse_pipe_commands. Found %d commands.\n\n", *cmd_count);
+//     return count;
+// }
+
+
+// // ==========================================================
+// // 调试版本：parse_command
+// // ==========================================================
+// int parse_command(char* line, command_t* cmd) {
+//     memset(cmd, 0, sizeof(command_t));
+//     char* line_copy = strdup(line);
+//     if (!line_copy) {
+//         perror("strdup");
+//         return 0;
+//     }
+
+//     char* token;
+//     int arg_count = 0;
+
+//     token = strtok(line_copy, " \t\r\n\a");
+//     while(token != NULL && arg_count < MAX_ARGS - 1) {
+//         cmd->args[arg_count++] = strdup(token);
+//         token = strtok(NULL, " \t\r\n\a");
+//     }
+//     cmd->args[arg_count] = NULL;
+    
+//     // 打印出解析结果
+//     printf("    [DEBUG] parse_command result for \"%s\":\n", line);
+//     for (int i = 0; i < arg_count; i++) {
+//         printf("        args[%d]: %s\n", i, cmd->args[i]);
+//     }
+
+//     // 处理重定向等（这部分代码保持不变）
+//     for (int i = 0; i < arg_count; i++) {
+//         if (cmd->args[i] != NULL && strcmp(cmd->args[i], ">") == 0) {
+//             if (cmd->args[i+1] != NULL) {
+//                 cmd->output_file = cmd->args[i+1];
+//                 cmd->args[i] = NULL;
+//             }
+//         } else if (cmd->args[i] != NULL && strcmp(cmd->args[i], "<") == 0) {
+//             if (cmd->args[i+1] != NULL) {
+//                 cmd->input_file = cmd->args[i+1];
+//                 cmd->args[i] = NULL;
+//             }
+//         } else if (cmd->args[i] != NULL && strcmp(cmd->args[i], "&") == 0) {
+//             cmd->is_background = 1;
+//             cmd->args[i] = NULL;
+//         }
+//     }
+
+//     free(line_copy);
+//     return arg_count;
+// }
