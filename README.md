@@ -1,13 +1,13 @@
 # linux-shell - 一个用 C 语言编写的 Linux Shell
 
-这是一个在 Linux/macOS 环境下，使用 C 语言从零开始编写的命令解释程序（Shell）。项目旨在学习和实践操作系统的核心概念，包括进程创建与控制、文件描述符、管道、I/O 重定向以及系统调用。
+在 Linux/macOS 环境下，使用 C 语言从零开始编写的命令解释程序（Shell）。项目旨在学习和实践操作系统的核心概念，包括进程创建与控制、文件描述符、管道、I/O 重定向以及系统调用。
 
 # ✅ 已实现功能 (Implemented Features)
 
 ## 基本 Shell 循环 (Core Shell Loop)
 
   * 能显示一个命令提示符（Prompt），并且能动态显示当前工作目录。
-  * 能读取用户输入的命令。
+  * 能通过 `readline` 库读取用户输入的命令，并支持行编辑（如箭头移动）和历史记录。
   * 能在一个循环中持续接收用户命令，直到用户输入 `exit` 或按下 `Ctrl+D`。
 
 ## 执行外部命令 (External Command Execution)
@@ -36,11 +36,10 @@
   * 能够解析由 `|` 连接的多个命令。
   * 通过 `pipe()` 和多个子进程，已经可以实现将前一个命令的标准输出连接到后一个命令的标准输入（例如 `ls | sort`）。
 
-# 🟡 待实现的高级功能 (Advanced Features to be Implemented)
+## 命令补全 (基础版)
 
-  * **命令补全 (Command Completion)**: 在用户输入命令时，按 `Tab` 键自动补全命令或文件名。这是现代 Shell 的标志性功能，也是我们下一个可以挑战的目标。
-  * **作业控制 (Job Control)**: 实现 `jobs`, `fg`, `bg` 等命令，以更精细地管理后台进程。
-  * **脚本执行 (Script Execution)**: 让 Shell 能够读取一个文件作为输入并逐行执行其中的命令。
+  * 集成了 GNU Readline 库，按 `Tab` 键可对命令进行补全。
+  * 目前实现了一个基于预设列表的命令名补全，作为功能的演示。
 
 -----
 
@@ -48,7 +47,7 @@
 
 ## 编译 (Compilation)
 
-本项目使用 `make`进行管理。请确保你的系统中已安装 `gcc` (或 `clang`) 和 `make` 工具。
+本项目使用 `make`进行管理。请确保你的系统中已安装 `gcc` (或 `clang`)、`make` 以及 `readline` 开发库。
 
 1.  **编译项目**:
     在项目根目录下，直接运行 `make` 命令。
@@ -66,8 +65,6 @@
     make clean
     ```
 
-    该命令会删除 `obj/` 目录和 `myshell` 可执行文件。
-
 ## 运行 (Running the Shell)
 
 编译成功后，在项目根目录下运行 `myshell`。
@@ -82,7 +79,7 @@
 /path/to/your/project/linux-shell$
 ```
 
-要退出 Shell，可以直接输入 `exit` 命令并回车。
+要退出 Shell，可以直接输入 `exit` 命令或按 `Ctrl+D`。
 
 ## 功能示例 (Feature Examples)
 
@@ -93,9 +90,7 @@
 ls -alF
 
 # 使用管道将 ls 的输出传递给 grep 进行过滤
-ls -l | grep ".c"
-或
-ls -l | grep .c
+ls -l src | grep ".c"
 ```
 
 ### 2\. I/O 重定向与后台执行
@@ -107,67 +102,68 @@ ls -l > a.txt
 # 查看 a.txt 的内容
 cat a.txt
 
-# 将 `echo` 的结果追加到 a.txt 文件末尾
-echo "--- End of list ---" >> a.txt
-cat a.txt
-
-# 将 a.txt 作为 `cat` 命令的输入
-cat < a.txt
-
 # 在后台执行一个耗时5秒的命令，Shell 会立刻返回
 sleep 5 &
 ```
 
 ### 3\. 内建命令
 
-#### `cd` - 切换目录
-
 ```bash
-# 进入 src 目录
+# 切换目录
 cd src
 
-# 查看当前路径 (外部命令)
-pwd
-```
-
-#### `history` - 查看历史记录
-
-```bash
-# 显示最近输入的命令历史
+# 查看历史记录
 history
-```
 
-#### `alias` / `unalias` - 设置和取消别名
-
-```bash
-# 设置一个别名 ll，使其等同于 `ls -l`
+# 设置、使用和取消别名
 alias ll='ls -l'
-
-# 直接使用别名 ll
 ll
-
-# 查看所有已设置的别名
-alias
-
-# 取消别名 ll
 unalias ll
 
-# 再次使用 ll，会提示命令未找到
-ll
+# 查看命令类型
+type ls
+type cd
 ```
 
-#### `type` - 查看命令类型
+### 4\. 命令补全 (基础版)
 
 ```bash
-# 在设置别名 ll 之后
-type ll
-# > ll is an alias for 'ls -l'
+# 输入 e 然后按 Tab 键，会自动补全为 echo
+e<Tab>
 
-# 查看内建命令
-type cd
-# > cd is a shell builtin
-
-# 查看外部命令
-type gcc
-# > gcc is /usr/bin/gcc
+# 输入 c 然后连续按两次 Tab 键，会列出所有 c 开头的命令
+c<Tab><Tab>
 ```
+
+-----
+
+# 📝 To-Do List (未来计划)
+
+  - [ ] **完善命令补全功能**
+      - [ ] 实现对 `$PATH` 环境变量中所有可执行文件的动态补全。
+      - [ ] 增加文件名和目录路径补全功能。
+      - [ ] 增加对别名（Alias）的补全支持。
+  - [ ] **实现作业控制 (Job Control)**
+      - [ ] 实现 `jobs` 命令来查看后台作业。
+    <!-- end list -->
+      * [ ] 实现 `fg` 和 `bg` 命令来控制作业的前后台切换。
+      * [ ] 实现对 `Ctrl+Z` 信号的捕捉，以挂起当前正在运行的程序。
+  - [ ] **支持脚本执行**
+      - [ ] 让 Shell 能够接收一个文件名作为参数，并执行文件中的命令。
+  - [ ] **高级功能**
+      * [ ] 支持 `~` 符号的家目录展开。
+      * [ ] 支持更复杂的命令提示符（Prompt）定制。
+
+
+# 补充：命令补全功能的实现
+集成 Readline 实现命令补全
+
+第一步：安装 Readline 开发库（如果之前没装过）
+
+在系统终端中执行：
+
+> Debian/Ubuntu: sudo apt-get install libreadline-dev
+
+> CentOS/Fedora/RHEL: sudo yum install readline-devel
+
+> macOS (使用 Homebrew): brew install readline (如果 make 时提示找不到，可能需要设置额外的 LDFLAGS 和 CPPFLAGS 指向 brew 的安装路径，例如 LDFLAGS="-L/opt/homebrew/opt/readline/lib" CPPFLAGS="-I/opt/homebrew/opt/readline/include")

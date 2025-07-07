@@ -62,6 +62,10 @@ char* expand_alias(char* line);     // 新增，这个函数非常关键
 void add_to_history(const char* cmd); // 新增
 void builtin_history(char** args);    // 修改，确保参数统一
 
+// 添加新函数的原型completion.c
+void initialize_completion();
+char** completion_callback(const char* text, int start, int end);
+
 // main.c
 void main_loop();
 void display_prompt();
