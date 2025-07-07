@@ -2,7 +2,7 @@
 
 在 Linux/macOS 环境下，使用 C 语言从零开始编写的命令解释程序（Shell）。项目旨在学习和实践操作系统的核心概念，包括进程创建与控制、文件描述符、管道、I/O 重定向以及系统调用。
 
-# ✅ 已实现功能 (Implemented Features)
+# 已实现功能 (Implemented Features)
 
 ## 基本 Shell 循环 (Core Shell Loop)
 
@@ -43,7 +43,7 @@
 
 -----
 
-# 🚀 使用说明 (Usage)
+# 使用说明 (Usage)
 
 ## 编译 (Compilation)
 
@@ -137,7 +137,7 @@ c<Tab><Tab>
 
 -----
 
-# 📝 To-Do List (未来计划)
+# To-Do List (未来计划)
 
   - [ ] **完善命令补全功能**
       - [ ] 实现对 `$PATH` 环境变量中所有可执行文件的动态补全。
