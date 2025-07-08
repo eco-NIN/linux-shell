@@ -2,30 +2,21 @@
  * @Author: Yuzhe Guo
  * @Date: 2025-07-07 14:58:19
  * @FilePath: /linux-shell/src/completion.c
- * @Descripttion: 命令补全逻辑 (高级)
+ * @Descripttion: 命令补全
  */
 
-// 采用所有专业 Shell（包括 bash）都在使用的标准方案：GNU Readline 库。它不仅能帮我们实现命令补全，还能立刻让你的 Shell 拥有“行编辑”功能（比如用左右箭头移动光标、Ctrl+A 到行首等），这会让你的 Shell 体验瞬间提升一个档次。
+// 采用所有专业 Shell（包括 bash）都在使用的标准方案：GNU Readline 库。
+// 1.实现命令补全，
+// 2.Shell实现“行编辑”功能（比如用左右箭头移动光标、Ctrl+A 到行首等）。
 
-// 行动计划：集成 Readline 实现命令补全
-
-// 第一步：安装 Readline 开发库（如果之前没装过）
-
-// 在你的系统终端中执行：
-
+// 安装 Readline 开发库，在系统终端中执行：
 // Debian/Ubuntu: sudo apt-get install libreadline-dev
-
 // CentOS/Fedora/RHEL: sudo yum install readline-devel
-
 // macOS (使用 Homebrew): brew install readline (如果 make 时提示找不到，可能需要设置额外的 LDFLAGS 和 CPPFLAGS 指向 brew 的安装路径，例如 LDFLAGS="-L/opt/homebrew/opt/readline/lib" CPPFLAGS="-I/opt/homebrew/opt/readline/include")
 
 
 
-
-
 // command_generator 是一个简化版，它只从一个固定的列表里查找命令。一个完整的实现需要去遍历 $PATH 环境变量里的所有目录来动态生成列表。但这个简化版足以让整个框架工作起来
-
- // src/completion.c
 #include "shell.h"
 #include <readline/readline.h>
 #include <dirent.h>
@@ -47,10 +38,12 @@ char** completion_callback(const char* text, int start, int end) {
     
     // 如果是命令的第一个词（start=0），则进行命令补全
     if (start == 0) {
+        // 利用readline 提供的命令补全函数“rl_completion_matches”，调用生成器函数，生成所有可能的匹配项
+        // 显示: readline 接收到我们返回的匹配列表后，由它负责完成后续所有工作：如果只有一个匹配项，就自动补全；如果有多个，就显示列表给用户。
         return rl_completion_matches(text, command_generator);
     }
     
-    // （未来可以扩展）否则，可以进行文件名或路径补全
+    // （计划扩展）否则，可以进行文件名或路径补全
     return NULL;
 }
 

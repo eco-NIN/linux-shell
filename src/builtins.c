@@ -15,16 +15,15 @@
 // == 内建命令注册与分发
 // =================================================================
 
-// 内建命令的名称列表 (加入 unalias)
 // 内建命令的名称列表
 const char* builtin_str[] = {
-    "cd",
-    "echo",
-    "history",
-    "type",
-    "alias",
-    "unalias", // 新增 unalias 命令
-    "exit"
+    "cd", // 切换目录
+    "echo", // 输出字符串
+    "history", // 显示历史记录
+    "type",  // 查看文件类型
+    "alias", // alias创建重命名
+    "unalias", // unalias删除重命名
+    "exit" // 退出程序
 };
 
 // 内建命令对应的函数指针数组
@@ -34,7 +33,7 @@ void (*builtin_func[])(char**) = {
     &builtin_history,
     &builtin_type,
     &builtin_alias,
-    &builtin_unalias, // 新增 unalias 命令
+    &builtin_unalias,
     // exit 是特殊情况，直接在 handle 中处理
 };
 
@@ -51,14 +50,19 @@ int handle_builtin_command(command_t* cmd) {
     for (int i = 0; i < num_builtins(); i++) {
         if (strcmp(cmd->args[0], builtin_str[i]) == 0) {
             (*builtin_func[i])(cmd->args);
+            // ‼️
             return 1; // 找到了并执行了内建命令
         }
     }
+    // ‼️
     return 0; // 不是内建命令
 }
 
-// --- 具体实现 ---
 
+
+// =================================================================
+// == cd和echo的具体实现
+// =================================================================
 void builtin_cd(char** args) {
     if (args[1] == NULL) {
         // 如果没有参数，则切换到 HOME 目录
@@ -92,12 +96,8 @@ void builtin_echo(char** args) {
     printf("\n");
 }
 
-
-// // 其他内建命令先留空
-// void builtin_history() { printf("history: not implemented yet\n"); }
-
 // =================================================================
-// == 功能一：History 实现部分
+// == History的具体实现
 // =================================================================
 
 // --- History 的全局变量 (用 static 限制在此文件内可见) ---
@@ -127,7 +127,6 @@ void add_to_history(const char* cmd) {
     history[history_count % HIST_SIZE] = strdup(cmd);
     history_count++;
 }
-
 
 /**
  * @description: 'history' 内建命令的实现。
@@ -187,15 +186,8 @@ void builtin_history(char** args) {
     }
 }
 
-
-// void builtin_type() { printf("type: not implemented yet\n"); }
-// void builtin_alias() { printf("alias: not implemented yet\n"); }
-// src/builtins.c 中修正后的代码
-//void builtin_type(char** args) { printf("type: not implemented yet\n"); }
-//void builtin_alias(char** args) { printf("alias: not implemented yet\n"); }
-
 // =================================================================
-// == 功能二：Alias 实现部分
+// == Alias的具体实现
 // =================================================================
 
 // --- Alias 的全局变量 ---
@@ -213,7 +205,6 @@ static char* lookup_alias(const char* name) {
     }
     return NULL;
 }
-
 
 /**
  * @description: 设置或更新一个别名
@@ -275,7 +266,6 @@ void builtin_unalias(char** args) {
 /**
  * @description: `alias` 命令的具体实现
  */
-// 在 src/builtins.c 中替换旧的 builtin_alias
 void builtin_alias(char** args) {
     if (args[1] == NULL) {
         // 情况1: 只输入 `alias`，打印所有别名
@@ -320,11 +310,6 @@ void builtin_alias(char** args) {
     }
 }
 
-/**
- * @description: 检查并展开别名。这是关键函数，会被 main_loop 调用。
- * @return {char*} 返回展开后的新命令字符串（需要调用者 free），如果不是别名则返回原命令的副本。
- */
-// 在 src/builtins.c 中替换旧的 expand_alias
 /**
  * @description: 检查并展开别名。这是关键函数，会被 main_loop 调用。
  * @return {char*} 返回展开后的新命令字符串（需要调用者 free），如果不是别名则返回原命令的副本。
@@ -386,7 +371,7 @@ char* expand_alias(char* line) {
 
 
 // =================================================================
-// == `type` 命令实现
+// == type的具体实现
 // =================================================================
 void builtin_type(char** args) {
     if (args[1] == NULL) {
@@ -438,7 +423,10 @@ void builtin_type(char** args) {
 }
 
 
-// 在 src/builtins.c 文件末尾添加
+
+// =================================================================
+// == History n 和 ！！和 ！n的具体实现
+// =================================================================
 
 /**
  * @description: 获取历史记录的总数

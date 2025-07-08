@@ -1,4 +1,4 @@
-# linux-shell - 一个用 C 语言编写的 Linux Shell
+# linux-shell
 
 在 Linux/macOS 环境下，使用 C 语言从零开始编写的命令解释程序（Shell）。项目旨在学习和实践操作系统的核心概念，包括进程创建与控制、文件描述符、管道、I/O 重定向以及系统调用。
 
@@ -21,13 +21,6 @@
   * `echo [内容]`: 可以打印文本，并且支持展开环境变量（如 `echo $HOME`）。
   * `exit`: 可以正常退出 Shell。
   * `history`: 可以显示用户输入的历史命令列表。
-  > history (应该会显示3条记录)
-  
-  > history 2 (应该只显示最近的2条：pwd 和 echo "hello")
-  
-  > history -c (清空所有历史)
-  
-  > history (这次应该什么都不显示)
   * `alias [name='command']`: 可以创建、修改或显示命令别名。
   * `unalias <name>`: 可以删除一个已存在的别名。
   * `type <command>`: 可以准确判断一个命令是别名、内建命令，还是外部可执行文件（并显示其路径）。
@@ -174,3 +167,15 @@ c<Tab><Tab>
 > CentOS/Fedora/RHEL: sudo yum install readline-devel
 
 > macOS (使用 Homebrew): brew install readline (如果 make 时提示找不到，可能需要设置额外的 LDFLAGS 和 CPPFLAGS 指向 brew 的安装路径，例如 LDFLAGS="-L/opt/homebrew/opt/readline/lib" CPPFLAGS="-I/opt/homebrew/opt/readline/include")
+
+  > history (应该会显示3条记录)
+  
+  > history 2 (应该只显示最近的2条：pwd 和 echo "hello")
+  
+  > history -c (清空所有历史)
+  
+  > history (这次应该什么都不显示)
+
+  > !! 执行最近的一条历史命令
+  
+  > !n 执行第n条历史命令
