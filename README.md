@@ -21,6 +21,13 @@
   * `echo [内容]`: 可以打印文本，并且支持展开环境变量（如 `echo $HOME`）。
   * `exit`: 可以正常退出 Shell。
   * `history`: 可以显示用户输入的历史命令列表。
+  > history (应该会显示3条记录)
+  
+  > history 2 (应该只显示最近的2条：pwd 和 echo "hello")
+  
+  > history -c (清空所有历史)
+  
+  > history (这次应该什么都不显示)
   * `alias [name='command']`: 可以创建、修改或显示命令别名。
   * `unalias <name>`: 可以删除一个已存在的别名。
   * `type <command>`: 可以准确判断一个命令是别名、内建命令，还是外部可执行文件（并显示其路径）。

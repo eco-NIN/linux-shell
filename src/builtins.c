@@ -9,7 +9,7 @@
 #include <sys/stat.h> // for `type` command
 #include <unistd.h>   // for `access` in `type` command
 #include <stdlib.h> // 确保包含了 stdlib.h for malloc
-
+#include <readline/history.h> // 需用到 readline 历史记录功能
 
 // =================================================================
 // == 内建命令注册与分发
@@ -127,20 +127,65 @@ void add_to_history(const char* cmd) {
     history[history_count % HIST_SIZE] = strdup(cmd);
     history_count++;
 }
-// --- `history` 命令的具体实现 ---
+
+
+/**
+ * @description: 'history' 内建命令的实现。
+ * 支持三种用法:
+ * 1. `history` - 显示所有历史记录
+ * 2. `history n` - 显示最近的 n 条历史记录
+ * 3. `history -c` - 清空当前会话的历史记录
+ * @param {char**} args - 命令的参数列表
+ */
 void builtin_history(char** args) {
-    int start_point = 0;
-    // 如果记录超过了最大容量，只显示最近的 HIST_SIZE 条
-    if (history_count > HIST_SIZE) {
-        start_point = history_count - HIST_SIZE;
+    // --- 情况1: `history -c` (清空历史) ---
+    if (args[1] != NULL && strcmp(args[1], "-c") == 0) {
+        
+        // 1. 调用 readline 的函数，清空其内部历史（为了让上下箭头失效）
+        clear_history();
+        
+        // 2. 清理我们自己的 history 数组（为了让 `history` 命令列表变空）
+        for (int i = 0; i < history_count; i++) {
+            int index = i % HIST_SIZE;
+            if (history[index] != NULL) {
+                free(history[index]);
+                history[index] = NULL;
+            }
+        }
+        history_count = 0;
+        
+        // 可以选择打印一条提示信息
+        // printf("History has been cleared.\n"); 
+        
+        return; // 完成操作，直接返回
+    }
+
+    // --- 情况2: `history n` (显示最近n条) ---
+    int n_to_display = -1; // 默认值为-1，代表显示全部
+    if (args[1] != NULL) {
+        n_to_display = atoi(args[1]); // atoi 会将非数字字符串转为0
+        if (n_to_display <= 0) {
+            fprintf(stderr, "myshell: history: %s: numeric argument required\n", args[1]);
+            return;
+        }
+    }
+
+    // --- 计算并打印历史记录 ---
+    int start_point;
+    int total_available = (history_count > HIST_SIZE) ? HIST_SIZE : history_count;
+
+    if (n_to_display != -1 && n_to_display < total_available) {
+        // 如果要显示的数量小于可用数量，则计算起始点
+        start_point = history_count - n_to_display;
+    } else {
+        // 否则，显示所有可用的历史记录
+        start_point = history_count - total_available;
     }
 
     for (int i = start_point; i < history_count; i++) {
-        // 通过取余运算正确地从环形缓冲区中获取索引
         printf("%5d  %s\n", i + 1, history[i % HIST_SIZE]);
     }
 }
-
 
 
 // void builtin_type() { printf("type: not implemented yet\n"); }
@@ -390,4 +435,27 @@ void builtin_type(char** args) {
     
     free(path_copy);
     fprintf(stderr, "type: %s: not found\n", cmd_name);
+}
+
+
+// 在 src/builtins.c 文件末尾添加
+
+/**
+ * @description: 获取历史记录的总数
+ */
+int get_history_count() {
+    return history_count;
+}
+
+/**
+ * @description: 根据编号获取一条历史命令
+ * @param {int} index - 历史记录的索引 (从0开始)
+ * @return {const char*} - 指向历史命令字符串的指针，找不到则返回 NULL
+ */
+const char* get_history_entry(int index) {
+    if (index < 0 || index >= history_count) {
+        return NULL;
+    }
+    // 使用取余运算从环形缓冲区中获取正确的条目
+    return history[index % HIST_SIZE];
 }

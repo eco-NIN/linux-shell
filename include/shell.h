@@ -61,6 +61,9 @@ char* expand_alias(char* line);     // 新增，这个函数非常关键
 // 添加和修改以下history函数原型
 void add_to_history(const char* cmd); // 新增
 void builtin_history(char** args);    // 修改，确保参数统一
+// history system getters
+int get_history_count();
+const char* get_history_entry(int index);
 
 // 添加新函数的原型completion.c
 void initialize_completion();
