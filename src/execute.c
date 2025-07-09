@@ -25,7 +25,7 @@ void execute_command(command_t* cmd) {
         // --- 子进程 ---
         int fd_in, fd_out;
 
-        // 处理输入重定向
+        // 处理输入重定向--结构体定义
         if (cmd->input_file) {
             // 打开一个文件，获取一个“文件描述符”（File Descriptor），这是一个代表该文件的整数。
             fd_in = open(cmd->input_file, O_RDONLY);
@@ -35,7 +35,7 @@ void execute_command(command_t* cmd) {
             }
             // dup2(old_fd, new_fd)是重定向的核心。它会复制一个文件描述符，让 new_fd 指向和 old_fd 同一个文件。
             // dup2(file_fd, STDOUT_FILENO) 就让“标准输出”（STDOUT_FILENO，通常是1）指向了我们用 open 打开的文件。
-            dup2(fd_in, STDIN_FILENO);
+            dup2(fd_in, STDIN_FILENO); // 把标准输入指到这个文件
             close(fd_in);
         }
 
@@ -46,7 +46,7 @@ void execute_command(command_t* cmd) {
                 perror(cmd->output_file);
                 exit(EXIT_FAILURE);
             }
-            dup2(fd_out, STDOUT_FILENO);
+            dup2(fd_out, STDOUT_FILENO); // 把标准输出指向这个文件
             close(fd_out);
         }
         
@@ -105,15 +105,18 @@ void execute_pipeline(command_t* cmds, int cmd_count) {
 
         if (pids[i] == 0) { // --- 子进程 ---
 
+
+            // 如果这个命令不是第一个，那它就需要“把前一个命令的输出当作自己的输入”。
+            // 而“前一个命令的输出”，在上一轮 pipe() 时保存在了 in_fd 中（读端）。
             if (in_fd != STDIN_FILENO) {
                 // 同样用于“焊接水管”，将子进程的 stdin 或 stdout 连接到管道的相应端口。
-                dup2(in_fd, STDIN_FILENO);
+                dup2(in_fd, STDIN_FILENO); // 把上一个命令的输出，接到当前命令的输入
                 // close(): 在管道中极其重要。
                 // 每个进程都必须关闭它自己用不到的管道端口，否则可能导致数据流“卡住”或死锁
                 close(in_fd);
             }
             if (i < cmd_count - 1) {
-                dup2(pipe_fds[1], STDOUT_FILENO);
+                dup2(pipe_fds[1], STDOUT_FILENO); // 当前命令输出，接到管道写端
                 close(pipe_fds[0]);
                 close(pipe_fds[1]);
             }
@@ -127,11 +130,11 @@ void execute_pipeline(command_t* cmds, int cmd_count) {
 
         // --- 父进程 ---
         if (in_fd != STDIN_FILENO) {
-            close(in_fd);
+            close(in_fd);  //把当前的 in_fd 关掉（已经给了子进程）
         }
         if (i < cmd_count - 1) {
             close(pipe_fds[1]);
-            in_fd = pipe_fds[0];
+            in_fd = pipe_fds[0];  // ‼️把新的管道读端传下去，给下一个子命令用
         }
     }
 

@@ -58,7 +58,7 @@ char* command_generator(const char* text, int state) {
         // 1. 获取所有内建命令和别名 (这里需要 builtins.c 提供函数)
         // 2. 获取 $PATH 中的所有可执行文件
         
-        // 为了简化，我们先用一个静态列表来演示，之后再扩展
+        // 用一个静态列表来演示，之后可以扩展
         const char* builtins[] = {"cd", "echo", "exit", "history", "alias", "unalias", "type", NULL};
         const char* externals[] = {"ls", "grep", "cat", "pwd", "make", NULL}; // 示例
 
