@@ -1,7 +1,7 @@
-# 编译生成文件,根据平台重新编译
+# # 编译生成文件（Linux/macOS/Windows），根据平台重新编译
 myshell
- 
 *.o
+*.obj
 *.out
 
 # VSCode 配置

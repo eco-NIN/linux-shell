@@ -114,6 +114,14 @@ cd src
 
 # 查看历史记录
 history
+  
+history 2 (只显示最近的2条：pwd 和 echo "hello")
+  
+history -c (清空所有历史)--history (什么都不显示)
+
+!! 执行最近的一条历史命令
+  
+!n 执行第n条历史命令
 
 # 设置、使用和取消别名
 alias ll='ls -l'
@@ -153,29 +161,12 @@ c<Tab><Tab>
   - [ ] **高级功能**
       * [ ] 支持 `~` 符号的家目录展开。
       * [ ] 支持更复杂的命令提示符（Prompt）定制。
-  - [ ] 实现history n 功能
 
 # 补充：命令补全功能的实现
-集成 Readline 实现命令补全
-
-第一步：安装 Readline 开发库（如果之前没装过）
-
-在系统终端中执行：
+集成 Readline 实现命令补全，安装 Readline 开发库（如果之前没装过），在系统终端中执行：
 
 > Debian/Ubuntu: sudo apt-get install libreadline-dev
 
 > CentOS/Fedora/RHEL: sudo yum install readline-devel
 
 > macOS (使用 Homebrew): brew install readline (如果 make 时提示找不到，可能需要设置额外的 LDFLAGS 和 CPPFLAGS 指向 brew 的安装路径，例如 LDFLAGS="-L/opt/homebrew/opt/readline/lib" CPPFLAGS="-I/opt/homebrew/opt/readline/include")
-
-  > history (应该会显示3条记录)
-  
-  > history 2 (应该只显示最近的2条：pwd 和 echo "hello")
-  
-  > history -c (清空所有历史)
-  
-  > history (这次应该什么都不显示)
-
-  > !! 执行最近的一条历史命令
-  
-  > !n 执行第n条历史命令
